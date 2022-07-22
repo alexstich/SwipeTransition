@@ -16,8 +16,6 @@ final class SwipeBackContext: Context<UINavigationController>, ContextType {
         }
     }
 
-    weak var pageViewControllerGestureRecognizer: UIGestureRecognizer?
-
     override var allowsTransitionStart: Bool {
         guard let navigationController = target else { return false }
         return navigationController.viewControllers.count > 1 && super.allowsTransitionStart

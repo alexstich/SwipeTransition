@@ -12,7 +12,6 @@ import UIKit
 public final class SwipeBackController: NSObject {
     public var onStartTransition: ((UIViewControllerContextTransitioning) -> Void)?
     public var onFinishTransition: ((UIViewControllerContextTransitioning) -> Void)?
-    private var shouldBeginSwipeTransition: (() -> Bool)?
 
     public var isEnabled: Bool {
         get { return context.isEnabled }
@@ -58,32 +57,6 @@ public final class SwipeBackController: NSObject {
         context.navigationControllerDelegateProxy = NavigationControllerDelegateProxy(delegates: [self] + (delegate.map { [$0] } ?? []) )
     }
 
-    public func observePageViewController(_ pageViewController: UIViewController, shouldBeginSwipe: @escaping () -> Bool) {
-        let scrollView = pageViewController.view.subviews
-            .lazy
-            .compactMap { $0 as? UIScrollView }
-            .first
-        scrollView?.panGestureRecognizer.require(toFail: panGestureRecognizer)
-        context.pageViewControllerGestureRecognizer = scrollView?.panGestureRecognizer
-        shouldBeginSwipeTransition = shouldBeginSwipe
-    }
-    
-    public func observeViewController(_ scrollView: UIScrollView?, shouldBeginSwipe: @escaping () -> Bool) {
-        if scrollView != nil {
-            scrollView!.panGestureRecognizer.require(toFail: panGestureRecognizer)
-            context.pageViewControllerGestureRecognizer = scrollView!.panGestureRecognizer
-            shouldBeginSwipeTransition = shouldBeginSwipe
-        }
-    }
-    
-    public func observeViewController(view: UIView?, shouldBeginSwipe: @escaping () -> Bool) {
-        if view != nil {
-            view!.gestureRecognizers?.first?.require(toFail: panGestureRecognizer)
-            context.pageViewControllerGestureRecognizer = view!.gestureRecognizers?.first
-            shouldBeginSwipeTransition = shouldBeginSwipe
-        }
-    }
-
     @objc private func handlePanGesture(_ recognizer: OneFingerDirectionalPanGestureRecognizer) {
         switch recognizer.state {
         case .began:
@@ -105,20 +78,21 @@ public final class SwipeBackController: NSObject {
 }
 
 extension SwipeBackController: UIGestureRecognizerDelegate {
+    
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        guard context.pageViewControllerGestureRecognizer == nil else {
-            if gestureRecognizer != context.pageViewControllerGestureRecognizer,
-                let shoudBeginSwipe_ = shouldBeginSwipeTransition?(), shoudBeginSwipe_,
-                let view = gestureRecognizer.view, panGestureRecognizer.translation(in: view).x > 0 {
-                return true
-            }
-            return false
-        }
         return context.allowsTransitionStart
     }
-
+    
     public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        return !(touch.view is UISlider)
+        let view_is_not_slider = !(touch.view is UISlider)
+        
+        if view_is_not_slider {
+            if let scroll_view = touch.view as? UIScrollView {
+                panGestureRecognizer.require(toFail: scroll_view.panGestureRecognizer)
+            }
+        }
+        
+        return view_is_not_slider
     }
 }
 
