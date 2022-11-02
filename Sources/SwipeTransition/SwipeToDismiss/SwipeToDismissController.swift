@@ -46,9 +46,9 @@ public final class SwipeToDismissController: NSObject {
     }
 
     public func removeTargetViewController() {
+        panGestureRecognizer.view?.removeGestureRecognizer(panGestureRecognizer)
         context?.target?.transitioningDelegate = nil
         context = nil
-        panGestureRecognizer.view?.removeGestureRecognizer(panGestureRecognizer)
     }
 
     @objc private func handlePanGesture(_ recognizer: UIPanGestureRecognizer) {
